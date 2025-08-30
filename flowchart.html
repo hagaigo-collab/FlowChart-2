@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>תרגול תרשים זרימה — חבר/י את השלבים בסדר הנכון</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#111827ee; --card:#1f2937; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --warn:#f97316; --danger:#ef4444; --primary:#3b82f6; --edge:#cbd5e1;
+    }
+    html,body{height:100%}
+    body{margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial; background: radial-gradient(1200px 800px at 70% -10%, #0b1022 0%, var(--bg) 60%); color: var(--text)}
+    header{display:flex; gap:1rem; align-items:center; justify-content:space-between; padding:12px 16px; background: linear-gradient(180deg, #111827cc, #0b0f1ccc); backdrop-filter: blur(6px); position: sticky; top:0; z-index:5; border-bottom:1px solid #1f2937}
+    header h1{font-size:1.1rem; margin:0; font-weight:700}
+    .controls{display:flex; flex-wrap:wrap; gap:.5rem; align-items:center}
+    button,.btn{background: linear-gradient(180deg, #2563eb, #1d4ed8); border:1px solid #1e40af; color:#fff; padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:600; box-shadow:0 6px 20px #1d4ed855}
+    button.secondary{background: linear-gradient(180deg, #1f2937, #111827); border-color:#334155; color:#e2e8f0}
+    button.ghost{background: transparent; border-color:#334155; color:#e2e8f0}
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .tag{font-size:.8rem; color:#cbd5e1; border:1px dashed #334155; padding:2px 8px; border-radius:999px}
+
+    .wrap{display:grid; grid-template-columns: 340px 1fr; gap:14px; height: calc(100% - 64px)}
+    @media (max-width: 900px){ .wrap{grid-template-columns: 1fr; height:auto} }
+
+    .side{ background:#0b0f1caa; border:1px solid #1f2937; border-radius:18px; margin:12px; padding:12px; overflow:auto; max-height: calc(100vh - 96px)}
+    .side h2{font-size:.95rem; margin:8px 0 6px; color:#e2e8f0}
+    .side p{margin:0 0 8px; color:var(--muted); font-size:.95rem}
+    .side .row{display:flex; gap:.5rem; flex-wrap:wrap; margin:8px 0}
+    textarea,input[type="text"]{width:100%; border-radius:12px; background:#0b1229; border:1px solid #24324f; color:#e2e8f0; padding:10px; resize:vertical; font-family:inherit; font-size:.95rem}
+    .hint{font-size:.85rem; color:#94a3b8}
+    .warn{color:#fbbf24}
+
+    .stage-wrap{position:relative; margin:12px; border-radius:18px; background:#030712; border:1px solid #1f2937; overflow:hidden; min-height:560px}
+    .stage-toolbar{position:absolute; inset:8px 8px auto auto; display:flex; gap:.5rem; z-index:4}
+    .stage{position:relative; height:72vh; min-height:560px}
+    @media (max-width: 900px){ .stage{height:70vh} }
+
+    #edges{position:absolute; inset:0; z-index:1; pointer-events:none}
+
+    .node{position:absolute; min-width:160px; max-width:260px; background:var(--card); border:1px solid #334155; border-radius:16px; padding:12px 14px; color:#e2e8f0; box-shadow:0 18px 50px #00000055; user-select:none; cursor:grab; z-index:2; touch-action:none}
+    .node.dragging{opacity:.9; cursor:grabbing; box-shadow:0 12px 28px #00000055}
+    .node .text{font-size:.95rem; color:#cbd5e1; line-height:1.35}
+    .node.selected{outline:2px solid var(--primary)}
+    .node.correct{border-color:#16a34a}
+    .node.incorrect{border-color:var(--danger)}
+
+    .footer{display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:10px 14px; background:#0b0f1ccc; border-top:1px solid #1f2937}
+    .status{font-weight:700}
+    .status.ok{color:var(--accent)}
+    .status.bad{color:var(--danger)}
+
+    .hidden{display:none}
+    .backdrop{position:fixed; inset:0; background:#00000088; z-index:20}
+    .modal{position:fixed; inset:auto 0 0 0; margin:auto; width:min(720px, calc(100vw - 24px)); max-width:720px; background:#0b0f1c; border:1px solid #1f2937; border-radius:16px; padding:16px; z-index:21; box-shadow:0 24px 80px #000000aa}
+    .modal h3{margin:0 0 8px; font-size:1rem}
+    .modal p{margin:0 0 8px; color:var(--muted)}
+    .modal .row{display:flex; gap:.5rem; flex-wrap:wrap; margin-top:8px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .inline-input{width:100%; border-radius:12px; background:#050914; border:1px solid #24324f; color:#e2e8f0; padding:10px}
+    .kudos{font-size:.8rem; color:#94a3b8}
+
+    details.small summary{cursor:pointer; color:#cbd5e1}
+    details.small{margin-top:12px}
+    #testResults{list-style:decimal; padding-inline-start:1.25rem; color:#e5e7eb}
+    #testResults li.pass{color:#22c55e}
+    #testResults li.fail{color:#ef4444}
+
+    .collapsed .side{display:none}
+    .collapsed .wrap{grid-template-columns: 1fr}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>תרגול תרשים זרימה — חברו חצים בין המלבנים לפי הסדר הנכון</h1>
+    <div class="controls">
+      <span class="tag">גרסה: v1.4 (ידידותי לוואטסאפ)</span>
+      <button id="btnReset" class="secondary" title="איפוס כל החיבורים">איפוס</button>
+      <button id="btnShuffle" class="secondary" title="ערבוב מיקומי המלבנים">ערבוב</button>
+      <button id="btnCheck">בדיקה</button>
+      <button id="btnReveal" class="ghost" title="הצגת פתרון">הצג פתרון</button>
+      <button id="btnTogglePanel" class="secondary" title="הסתר/הצג פאנל מנחה">הסתר פאנל</button>
+      <button id="btnOpenParticipant" class="ghost" title="פתיחת מסך משתתף (ללא פאנל מנחה)">מסך משתתף</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <aside class="side" id="instructorPanel">
+      <h2>הגדרות מנחה</h2>
+      <p>הדבק/י למטה את שלבי התהליך — שורה לכל שלב. המשתתפים יקבלו מלבנים מעורבבים ויצטרכו לחבר חצים לפי הסדר הנכון.</p>
+      <textarea id="stepsInput" rows="8" placeholder="דוגמה:\nקבלת בקשה\nבדיקת זכאות\nאימות פרטים\nאישור סופי\nסגירת טיפול"></textarea>
+
+      <h2 style="margin-top:14px">שיתוף</h2>
+      <p class="hint">כדי שהקישור יעבוד בוואטסאפ, הקובץ חייב להיות ב‑HTTP(S). אם פתחת מקובץ מקומי (file://), קישור לא יעבוד אצל אחרים. העלה/י לאירוח סטטי (למשל GitHub Pages/Netlify/Vercel) ושימי/ם כאן את ה‑URL.</p>
+      <input id="baseUrlInput" type="text" placeholder="https://example.com/flowchart.html"/>
+      <div class="row">
+        <button id="btnBuild" title="יצירת התרגיל מהשלבים">צור תרשים</button>
+        <button id="btnCopyLink" class="secondary" title="יצירת קישור למסך משתתף">העתק קישור שיתוף</button>
+        <button id="btnWhatsappText" class="secondary" title="טקסט מוכן לוואטסאפ">טקסט לוואטסאפ</button>
+      </div>
+      <p id="hostingWarning" class="hint warn hidden">זוהה פתיחה מקובץ מקומי (file://). קישור לא יעבוד אצל משתתפים — נא לארח את הקובץ ולהזין כאן כתובת בסיס.</p>
+
+      <h2 style="margin-top:16px">אפשרויות</h2>
+      <label style="display:flex; align-items:center; gap:.5rem; margin:6px 0"><input id="optLinear" type="checkbox" checked/><span>תרשים לינארי (חיבור מ‑ראשון לשני וכן הלאה)</span></label>
+      <p class="hint">בגרסה זו מצב לינארי בלבד נתמך לבדיקה אוטומטית.</p>
+
+      <details class="small"><summary>בדיקות (למפתח)</summary>
+        <div class="row"><button id="btnRunTests" class="secondary">הרץ בדיקות</button></div>
+        <ol id="testResults"></ol>
+      </details>
+    </aside>
+
+    <main class="stage-wrap">
+      <div class="stage-toolbar"><span class="tag" id="selectionHint">קליק על מלבן ואז על מלבן נוסף = יצירת חץ</span></div>
+      <canvas id="edges"></canvas>
+      <div id="stage" class="stage" aria-live="polite"></div>
+      <div class="footer"><div class="status" id="status">מצב: מוכן</div><div id="score"></div></div>
+    </main>
+  </div>
+
+  <!-- Share / Copy fallback modal -->
+  <div id="shareBackdrop" class="backdrop hidden"></div>
+  <div id="shareModal" class="modal hidden" role="dialog" aria-labelledby="shareTitle" aria-modal="true">
+    <h3 id="shareTitle">שיתוף/העתקת קישור לתרגיל</h3>
+    <p>העתקה חסומה? בחר/י ידנית (Ctrl/Cmd+C) או הורד/י כ‑TXT.</p>
+    <input id="shareUrlInput" class="inline-input mono" readonly>
+    <div class="row">
+      <button id="btnSelectAll" class="secondary">בחר/י הכל</button>
+      <button id="btnTryCopy" class="secondary">נסה/י להעתיק</button>
+      <button id="btnDownloadLink" class="secondary">הורדה כ‑TXT</button>
+      <button id="btnSystemShare" class="secondary hidden">שיתוף...</button>
+      <button id="btnCloseModal">סגור</button>
+    </div>
+    <p class="kudos">טיפ: לפעמים שרתים חוסמים פרמטרים — יצרנו גם גרסת #hash.</p>
+    <input id="shareHashInput" class="inline-input mono" readonly>
+  </div>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('edges');
+  const ctx = canvas.getContext('2d');
+  const statusEl = document.getElementById('status');
+  const scoreEl = document.getElementById('score');
+
+  const stepsInput = document.getElementById('stepsInput');
+  const baseUrlInput = document.getElementById('baseUrlInput');
+  const hostingWarning = document.getElementById('hostingWarning');
+
+  const btnBuild = document.getElementById('btnBuild');
+  const btnCopyLink = document.getElementById('btnCopyLink');
+  const btnWhatsappText = document.getElementById('btnWhatsappText');
+  const btnReset = document.getElementById('btnReset');
+  const btnShuffle = document.getElementById('btnShuffle');
+  const btnCheck = document.getElementById('btnCheck');
+  const btnReveal = document.getElementById('btnReveal');
+  const btnTogglePanel = document.getElementById('btnTogglePanel');
+  const btnOpenParticipant = document.getElementById('btnOpenParticipant');
+  const optLinear = document.getElementById('optLinear');
+  const btnRunTests = document.getElementById('btnRunTests');
+
+  // Modal elements
+  const backdrop = document.getElementById('shareBackdrop');
+  const modal = document.getElementById('shareModal');
+  const shareInput = document.getElementById('shareUrlInput');
+  const shareHashInput = document.getElementById('shareHashInput');
+  const btnSelectAll = document.getElementById('btnSelectAll');
+  const btnTryCopy = document.getElementById('btnTryCopy');
+  const btnDownloadLink = document.getElementById('btnDownloadLink');
+  const btnCloseModal = document.getElementById('btnCloseModal');
+  const btnSystemShare = document.getElementById('btnSystemShare');
+
+  let nodes = []; let edges = []; let expected = []; let selectedId = null; let reveal = false;
+
+  const rand = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
+
+  function setCanvasSize(){ const rect = stage.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; }
+  function nodeCenter(n){ return { x: n.x + n.w/2, y: n.y + n.h/2 }; }
+  function drawArrow(from, to, color = getComputedStyle(document.documentElement).getPropertyValue('--edge') || '#cbd5e1', dashed=false){
+    const startX = from.x, startY = from.y, endX = to.x, endY = to.y; ctx.save(); ctx.lineWidth = 2.5; ctx.strokeStyle = color.trim(); if(dashed) ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(startX,startY); ctx.lineTo(endX,endY); ctx.stroke(); const angle=Math.atan2(endY-startY,endX-startX), head=12; ctx.beginPath(); ctx.moveTo(endX,endY); ctx.lineTo(endX-head*Math.cos(angle-Math.PI/6), endY-head*Math.sin(angle-Math.PI/6)); ctx.lineTo(endX-head*Math.cos(angle+Math.PI/6), endY-head*Math.sin(angle+Math.PI/6)); ctx.lineTo(endX,endY); ctx.closePath(); ctx.fillStyle=color.trim(); ctx.fill(); ctx.restore(); }
+  function redraw(){ setCanvasSize(); ctx.clearRect(0,0,canvas.width, canvas.height); for(const e of edges){ const from=nodeCenter(nodes.find(n=>n.id===e.fromId)); const to=nodeCenter(nodes.find(n=>n.id===e.toId)); drawArrow(from,to);} if(reveal){ for(const e of expected){ const from=nodeCenter(nodes.find(n=>n.id===e.fromId)); const to=nodeCenter(nodes.find(n=>n.id===e.toId)); drawArrow(from,to,'#22c55e',true);} } }
+  function layoutRandom(){ const rect=stage.getBoundingClientRect(); const margin=24, areaW=rect.width-2*margin, areaH=rect.height-2*margin; nodes.forEach(n=>{ n.x=rand(margin, Math.max(margin, areaW-n.w)); n.y=rand(margin, Math.max(margin, areaH-n.h)); positionNode(n);}); redraw(); }
+  function positionNode(n){ n.el.style.left=n.x+'px'; n.el.style.top=n.y+'px'; }
+
+  function createNode(id,text){ const el=document.createElement('div'); el.className='node'; el.dataset.id=id; el.innerHTML=`<div class="text"></div>`; el.querySelector('.text').textContent=text; stage.appendChild(el); const rect=el.getBoundingClientRect(), stRect=stage.getBoundingClientRect(); const n={id, el, x:rand(24, Math.max(24, stRect.width-rect.width-24)), y:rand(24, Math.max(24, stRect.height-rect.height-24)), w:rect.width, h:rect.height, text}; nodes.push(n); positionNode(n);
+    el.addEventListener('click', (ev)=>{ const id=n.id; if(selectedId===null){ selectedId=id; el.classList.add('selected'); statusEl.textContent='בחר/י יעד לחיבור ⟶'; } else if(selectedId===id){ selectedId=null; el.classList.remove('selected'); statusEl.textContent='מצב: מוכן'; } else { const fromId=selectedId, toId=id; if(!edges.some(e=> e.fromId===fromId && e.toId===toId)){ edges.push({fromId,toId}); } const prevSel=document.querySelector(`.node[data-id="${CSS.escape(String(fromId))}"]`); if(prevSel) prevSel.classList.remove('selected'); selectedId=null; statusEl.textContent='נוסף חץ חדש'; redraw(); } ev.stopPropagation(); });
+    let dragging=false, startX=0,startY=0,origX=0,origY=0; const onMove=(e)=>{ if(!dragging) return; const pt=getPoint(e); n.x=origX+(pt.x-startX); n.y=origY+(pt.y-startY); const st=stage.getBoundingClientRect(); const maxX=st.width-n.w-6, maxY=st.height-n.h-6; n.x=Math.max(6, Math.min(maxX,n.x)); n.y=Math.max(6, Math.min(maxY,n.y)); positionNode(n); redraw(); if(e.cancelable) e.preventDefault(); }; const onUp=()=>{ dragging=false; el.classList.remove('dragging'); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp); };
+    el.addEventListener('mousedown', (e)=>{ dragging=true; el.classList.add('dragging'); const pt=getPoint(e); startX=pt.x; startY=pt.y; origX=n.x; origY=n.y; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); });
+    el.addEventListener('touchstart', (e)=>{ dragging=true; el.classList.add('dragging'); const pt=getPoint(e); startX=pt.x; startY=pt.y; origX=n.x; origY=n.y; window.addEventListener('touchmove', onMove, {passive:false}); window.addEventListener('touchend', onUp); }, {passive:true});
+  }
+
+  function getPoint(e){ const rect=stage.getBoundingClientRect(); if(e.touches && e.touches[0]) return { x:e.touches[0].clientX-rect.left, y:e.touches[0].clientY-rect.top }; return { x:e.clientX-rect.left, y:e.clientY-rect.top }; }
+
+  function clearStage(){ nodes.forEach(n=> n.el.remove()); nodes=[]; edges=[]; expected=[]; selectedId=null; reveal=false; btnReveal.textContent='הצג פתרון'; statusEl.textContent='מצב: מוכן'; scoreEl.textContent=''; redraw(); }
+  function buildFromSteps(stepLines){ clearStage(); const steps=stepLines.map(s=> s.trim()).filter(Boolean); if(steps.length<2){ statusEl.textContent='נדרשים לפחות שני שלבים'; return;} steps.forEach((text,i)=> createNode(i,text)); expected=[]; for(let i=0;i<steps.length-1;i++) expected.push({fromId:i, toId:i+1}); setTimeout(()=>{ nodes.forEach(n=>{ const r=n.el.getBoundingClientRect(); n.w=r.width; n.h=r.height; }); layoutRandom(); },0); }
+
+  function shufflePositions(){ layoutRandom(); statusEl.textContent='המלבנים עורבבו'; }
+  function resetConnections(){ edges=[]; nodes.forEach(n=> n.el.classList.remove('correct','incorrect','selected')); selectedId=null; reveal=false; btnReveal.textContent='הצג פתרון'; redraw(); statusEl.textContent='החיבורים אופסו'; scoreEl.textContent=''; }
+  function checkSolution(){ if(optLinear.checked){ const total=expected.length; let correct=0, wrong=[]; for(const exp of expected){ if(edges.some(e=> e.fromId===exp.fromId && e.toId===exp.toId)){ correct++; nodes[exp.fromId]?.el.classList.add('correct'); nodes[exp.toId]?.el.classList.add('correct'); } } for(const e of edges){ if(!expected.some(exp=> exp.fromId===e.fromId && exp.toId===e.toId)) wrong.push(e); } if(correct===total && !wrong.length){ statusEl.textContent='כל הכבוד! כל החצים נכונים ✅'; statusEl.className='status ok'; } else { statusEl.textContent=`נמצאו ${correct} חיבורים נכונים מתוך ${total}. ${wrong.length? 'ו‑'+wrong.length+' חיבורים מיותרים/שגויים.':''}`; statusEl.className='status bad'; } scoreEl.textContent=`ציון: ${Math.round((correct/total)*100)}%`; } else { statusEl.textContent='בגרסה זו, בדיקה אוטומטית זמינה רק במצב לינארי.'; } }
+
+  // ---- Share helpers ----
+  function pageOrigin(){
+    const base = (baseUrlInput.value||'').trim();
+    const isHttp = /^https?:\/\//i.test(base);
+    if(isHttp) return base;
+    const here = window.location.href;
+    if(/^https?:\/\//i.test(here)) return here;
+    return null; // file:// or unknown
+  }
+  function buildShareURL(rawText, role='participant'){
+    const encoded = btoa(unescape(encodeURIComponent(rawText)));
+    const base = pageOrigin();
+    // Two variants: query (?s=) and hash (#s=) in case servers strip query strings.
+    const build = (useHash=false)=>{
+      if(!base) return null;
+      const u = new URL(base);
+      if(useHash){ u.hash = `s=${encoded}&role=${role}`; }
+      else { u.searchParams.set('s', encoded); u.searchParams.set('role', role); }
+      return u.toString();
+    };
+    return {query: build(false), hash: build(true)};
+  }
+  function openShareModal(share){ shareInput.value = share.query||''; shareHashInput.value = share.hash||''; shareInput.focus(); shareInput.select(); backdrop.classList.remove('hidden'); modal.classList.remove('hidden'); if(navigator.share){ btnSystemShare.classList.remove('hidden'); } }
+  async function copyToClipboardSafe(text){ try{ if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); return {ok:true, method:'clipboard'}; } throw new Error('clipboard-unavailable'); } catch(err){ try{ const ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand && document.execCommand('copy'); document.body.removeChild(ta); if(ok) return {ok:true, method:'execCommand'}; }catch(e){} return {ok:false, error:err}; } }
+
+  async function copyShareLink(){ const text=stepsInput.value||''; if(!text.trim()){ statusEl.textContent='אין שלבים להטמעה בקישור'; return; }
+    const share=buildShareURL(text,'participant'); if(!share.query && !share.hash){ statusEl.textContent='אין כתובת אירוח. נא לארח את הקובץ ולהזין URL למעלה.'; openShareModal({query:'',hash:''}); return; }
+    const linkToCopy = share.query || share.hash; const result = await copyToClipboardSafe(linkToCopy);
+    if(result.ok){ statusEl.textContent='קישור הועתק ללוח'; } else { statusEl.textContent='העתקה חסומה — פתחתי חלון לשיתוף ידני'; openShareModal(share); }
+  }
+
+  function whatsappMessage(){
+    const steps = stepsInput.value.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    const share = buildShareURL(stepsInput.value||'', 'participant');
+    const link = share.query || share.hash || '[נדרש אירוח של הקובץ]';
+    const title = 'תרגיל תרשים זרימה — לחצו לפתיחה בפלאפון:';
+    const bullets = steps.map((s,i)=>`• ${s}`).join('\n');
+    return `${title}\n${link}\n\nשלבים בתרגיל:\n${bullets}`;
+  }
+
+  function tryLoadFromURL(){
+    const here = window.location.href;
+    if(!/^https?:\/\//i.test(here)) hostingWarning.classList.remove('hidden');
+    const url = new URL(here); let s = url.searchParams.get('s'); let role = url.searchParams.get('role');
+    // support hash variant: #s=...&role=...
+    if(!s && url.hash){ const h = new URLSearchParams(url.hash.replace(/^#/,'')); s = h.get('s'); role = role || h.get('role'); }
+    if(s){ try{ const decoded = decodeURIComponent(escape(atob(s))); stepsInput.value = decoded; buildFromSteps(decoded.split(/\n+/)); }catch(e){ console.warn('decode failed', e); } }
+    else { const demo=['קבלת בקשה','בדיקת זכאות','אימות פרטים','אישור סופי','סגירת טיפול']; stepsInput.value=demo.join('\n'); buildFromSteps(demo); }
+    if(role==='participant'){ document.body.classList.add('collapsed'); }
+  }
+
+  // Modal wiring
+  document.getElementById('btnSelectAll').addEventListener('click', ()=>{ shareInput.focus(); shareInput.select(); });
+  document.getElementById('btnTryCopy').addEventListener('click', async ()=>{ const res = await copyToClipboardSafe(shareInput.value); statusEl.textContent = res.ok? 'קישור הועתק (חלופי)' : 'לא ניתן להעתיק — נא העתק/י ידנית'; if(!res.ok){ shareInput.focus(); shareInput.select(); } });
+  document.getElementById('btnDownloadLink').addEventListener('click', ()=>{ const blob=new Blob([shareInput.value+'\n\n(חלופי via #hash)\n'+shareHashInput.value], {type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='flowchart-share-link.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=> URL.revokeObjectURL(a.href), 1000); });
+  document.getElementById('btnCloseModal').addEventListener('click', ()=>{ backdrop.classList.add('hidden'); modal.classList.add('hidden'); });
+  document.getElementById('btnSystemShare').addEventListener('click', async ()=>{ try{ await navigator.share({ title:'תרגול תרשים זרימה', text:shareInput.value }); }catch(e){} });
+
+  // Panel/Participant controls
+  document.getElementById('btnTogglePanel').addEventListener('click', ()=>{ document.body.classList.toggle('collapsed'); btnTogglePanel.textContent = document.body.classList.contains('collapsed') ? 'הצג פאנל' : 'הסתר פאנל'; });
+  document.getElementById('btnOpenParticipant').addEventListener('click', ()=>{ const share=buildShareURL(stepsInput.value||'', 'participant'); const url = share.query || share.hash || null; if(url) window.open(url, '_blank'); else alert('אין כתובת אירוח. נא לארח את הקובץ ולהזין URL.'); });
+
+  // Events
+  btnBuild.addEventListener('click', ()=> buildFromSteps(stepsInput.value.split(/\n+/)) );
+  btnCopyLink.addEventListener('click', copyShareLink);
+  btnWhatsappText.addEventListener('click', ()=>{ const text=whatsappMessage(); const ok = navigator.share ? navigator.share({ text }) : false; if(!ok){ openShareModal({query:text, hash:''}); shareInput.value = text; shareHashInput.value=''; } });
+  btnReset.addEventListener('click', resetConnections);
+  btnShuffle.addEventListener('click', shufflePositions);
+  btnCheck.addEventListener('click', checkSolution);
+  btnReveal.addEventListener('click', ()=>{ reveal = !reveal; btnReveal.textContent = reveal? 'הסתר פתרון' : 'הצג פתרון'; redraw(); });
+
+  // Stage interactions
+  stage.addEventListener('click', ()=>{ const el=document.querySelector('.node.selected'); if(el) el.classList.remove('selected'); selectedId=null; statusEl.textContent='מצב: מוכן'; });
+  window.addEventListener('resize', redraw);
+
+  // Tests
+  function runTests(){ const resultsEl=document.getElementById('testResults'); resultsEl.innerHTML=''; const add=(n,ok,d='')=>{ const li=document.createElement('li'); li.textContent=n+(d? ' — '+d:''); li.className=ok?'pass':'fail'; resultsEl.appendChild(li); };
+    const saved=stepsInput.value; try{
+      const original='א׳\nב׳\nג׳'; const temp=buildShareURL(original); const sParam=(temp.query? new URL(temp.query).searchParams.get('s') : new URL('https://x/#'+temp.hash).hash.slice(1)); const round=decodeURIComponent(escape(atob(sParam.split('=')[1]||sParam))); add('1) Base64 roundtrip', round===original);
+      const steps=['A','B','C']; add('2) Linear edges = 2', steps.length-1===2);
+      stepsInput.value=steps.join('\n'); buildFromSteps(steps); const hasNum=[...document.querySelectorAll('.node')].some(n=> /שלב\s+\d+/.test(n.textContent)); add('3) No step numbers visible', !hasNum);
+      const n0=nodes[0]; const oldX=parseInt(n0.el.style.left||'0',10); n0.x+=20; positionNode(n0); redraw(); add('4) Drag changes left/top', parseInt(n0.el.style.left||'0',10)!==oldX);
+      const urlObj = buildShareURL('a\nb','participant'); add('5) Participant role present', (urlObj.query&&new URL(urlObj.query).searchParams.get('role')==='participant') || (urlObj.hash&&/role=participant/.test(urlObj.hash)) );
+    }catch(e){ add('שגיאת ריצה בבדיקות', false, e && e.message); } finally { stepsInput.value=saved; buildFromSteps(stepsInput.value.split(/\n+/)); }
+  }
+  if(btnRunTests) btnRunTests.addEventListener('click', runTests);
+
+  // Init
+  setCanvasSize(); tryLoadFromURL();
+})();
+</script>
+</body>
+</html>
